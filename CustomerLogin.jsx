@@ -1,51 +1,72 @@
-import React, { useState } from "react";
-import { auth, RecaptchaVerifier } from "../firebase/firebaseConfig";
-import { signInWithPhoneNumber } from "firebase/auth";
-
-function CustomerLogin() {
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [confirmationResult, setConfirmationResult] = useState(null);
-
-  const setupRecaptcha = () => {
-    window.recaptchaVerifier = new RecaptchaVerifier("recaptcha-container", {
-      size: "invisible",
-      callback: () => {},
-    }, auth);
-  };
-
-  const handleSendOtp = async () => {
-    setupRecaptcha();
-    const appVerifier = window.recaptchaVerifier;
-    try {
-      const result = await signInWithPhoneNumber(auth, "+91" + phone, appVerifier);
-      setConfirmationResult(result);
-      alert("OTP Sent!");
-    } catch (err) {
-      alert("Error sending OTP");
+Put your HTML text here<!DOCTYPE html>
+<html>
+<head>
+  <title>Sirohi Services OTP Login</title>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
+  <style>
+    body {
+      font-family: Arial;
+      padding: 40px;
+      text-align: center;
     }
-  };
-
-  const handleVerifyOtp = async () => {
-    try {
-      await confirmationResult.confirm(otp);
-      alert("Login सफल हुआ ✅");
-    } catch (err) {
-      alert("गलत OTP ❌");
+    input {
+      padding: 8px;
+      margin: 5px;
+      width: 200px;
     }
-  };
+  </style>
+</head>
+<body>
+  <h2>📱 Sirohi Services OTP Login</h2>
+  <input type="text" id="phone" placeholder="Enter phone number" /><br />
+  <div id="recaptcha-container"></div>
+  <button onclick="sendOTP()">Send OTP</button><br /><br />
+  <input type="text" id="otp" placeholder="Enter OTP" /><br />
+  <button onclick="verifyOTP()">Verify OTP</button>
 
-  return (
-    <div>
-      <h2>Customer Login</h2>
-      <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter phone number" />
-      <button onClick={handleSendOtp}>Send OTP</button>
-      <div id="recaptcha-container"></div>
-      <br />
-      <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter OTP" />
-      <button onClick={handleVerifyOtp}>Verify OTP</button>
-    </div>
-  );
-}
+  <script>
+    // ✅ Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyB9Ay-fL_ai0-vSIeeYMKrWGB_Fk2huJYM",
+      authDomain: "sirohibazar-a1f79.firebaseapp.com",
+      projectId: "sirohibazar-a1f79",
+      storageBucket: "sirohibazar-a1f79.appspot.com",
+      messagingSenderId: "943305647594",
+      appId: "1:943305647594:web:b0bf07a2583b5a2e763e93",
+    };
 
-export default CustomerLogin;
+    const app = firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
+      size: 'invisible'
+    });
+
+    let confirmationResult;
+
+    function sendOTP() {
+      const phoneNumber = "+91" + document.getElementById("phone").value;
+      const appVerifier = window.recaptchaVerifier;
+
+      auth.signInWithPhoneNumber(phoneNumber, appVerifier)
+        .then((result) => {
+          confirmationResult = result;
+          alert("OTP sent successfully ✅");
+        })
+        .catch((error) => {
+          alert("Error sending OTP ❌");
+        });
+    }
+
+    function verifyOTP() {
+      const code = document.getElementById("otp").value;
+      confirmationResult.confirm(code).then((result) => {
+        alert("OTP Verified! ✅");
+      }).catch((error) => {
+        alert("Invalid OTP ❌");
+      });
+    }
+  </script>
+</body>
+</html>
