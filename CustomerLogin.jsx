@@ -5,47 +5,45 @@ import { signInWithPhoneNumber } from "firebase/auth";
 function CustomerLogin() {
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
-  const [confirmation, setConfirmation] = useState(null);
+  const [confirmationResult, setConfirmationResult] = useState(null);
 
-  const handleSendOtp = () => {
-    window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha', {
+  const setupRecaptcha = () => {
+    window.recaptchaVerifier = new RecaptchaVerifier("recaptcha-container", {
       size: "invisible",
-      callback: (response) => {}
-    });
-
-    signInWithPhoneNumber(auth, "+91" + phone, window.recaptchaVerifier)
-      .then((confirmationResult) => {
-        setConfirmation(confirmationResult);
-        alert("OTP Sent!");
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Failed to send OTP.");
-      });
+      callback: () => {},
+    }, auth);
   };
 
-  const verifyOtp = () => {
-    if (confirmation) {
-      confirmation
-        .confirm(otp)
-        .then((result) => {
-          alert("Login Success!");
-        })
-        .catch((err) => {
-          alert("Invalid OTP");
-        });
+  const handleSendOtp = async () => {
+    setupRecaptcha();
+    const appVerifier = window.recaptchaVerifier;
+    try {
+      const result = await signInWithPhoneNumber(auth, "+91" + phone, appVerifier);
+      setConfirmationResult(result);
+      alert("OTP Sent!");
+    } catch (err) {
+      alert("Error sending OTP");
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    try {
+      await confirmationResult.confirm(otp);
+      alert("Login सफल हुआ ✅");
+    } catch (err) {
+      alert("गलत OTP ❌");
     }
   };
 
   return (
-    <div style={{ padding: 20 }}>
-      <h2>Customer OTP Login</h2>
-      <input type="text" placeholder="Phone number" value={phone} onChange={(e) => setPhone(e.target.value)} />
+    <div>
+      <h2>Customer Login</h2>
+      <input type="text" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Enter phone number" />
       <button onClick={handleSendOtp}>Send OTP</button>
-      <br /><br />
-      <input type="text" placeholder="Enter OTP" value={otp} onChange={(e) => setOtp(e.target.value)} />
-      <button onClick={verifyOtp}>Verify</button>
-      <div id="recaptcha"></div>
+      <div id="recaptcha-container"></div>
+      <br />
+      <input type="text" value={otp} onChange={(e) => setOtp(e.target.value)} placeholder="Enter OTP" />
+      <button onClick={handleVerifyOtp}>Verify OTP</button>
     </div>
   );
 }
