@@ -1,72 +1,83 @@
-Put your HTML text here<!DOCTYPE html>
-<html>
-<head>
-  <title>Sirohi Services OTP Login</title>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth.js"></script>
-  <style>
-    body {
-      font-family: Arial;
-      padding: 40px;
-      text-align: center;
-    }
-    input {
-      padding: 8px;
-      margin: 5px;
-      width: 200px;
-    }
-  </style>
-</head>
-<body>
-  <h2>📱 Sirohi Services OTP Login</h2>
-  <input type="text" id="phone" placeholder="Enter phone number" /><br />
-  <div id="recaptcha-container"></div>
-  <button onclick="sendOTP()">Send OTP</button><br /><br />
-  <input type="text" id="otp" placeholder="Enter OTP" /><br />
-  <button onclick="verifyOTP()">Verify OTP</button>
+import React, { useState } from "react";
+import { auth } from "../firebase/firebaseConfig";
+import { signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
 
-  <script>
-    // ✅ Firebase config
-    const firebaseConfig = {
-      apiKey: "AIzaSyB9Ay-fL_ai0-vSIeeYMKrWGB_Fk2huJYM",
-      authDomain: "sirohibazar-a1f79.firebaseapp.com",
-      projectId: "sirohibazar-a1f79",
-      storageBucket: "sirohibazar-a1f79.appspot.com",
-      messagingSenderId: "943305647594",
-      appId: "1:943305647594:web:b0bf07a2583b5a2e763e93",
-    };
+function CustomerLogin() {
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [confirmationResult, setConfirmationResult] = useState(null);
 
-    const app = firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
+  const setupRecaptcha = () => {
+    window.recaptchaVerifier = new RecaptchaVerifier(
+      "recaptcha-container",
+      {
+        size: "normal", // visible captcha
+        callback: () => {}
+      },
+      auth
+    );
+  };
 
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container', {
-      size: 'invisible'
-    });
-
-    let confirmationResult;
-
-    function sendOTP() {
-      const phoneNumber = "+91" + document.getElementById("phone").value;
-      const appVerifier = window.recaptchaVerifier;
-
-      auth.signInWithPhoneNumber(phoneNumber, appVerifier)
-        .then((result) => {
-          confirmationResult = result;
-          alert("OTP sent successfully ✅");
-        })
-        .catch((error) => {
-          alert("Error sending OTP ❌");
-        });
+  const handleSendOtp = async () => {
+    if (!phone) {
+      alert("कृपया मोबाइल नंबर डालें");
+      return;
     }
 
-    function verifyOTP() {
-      const code = document.getElementById("otp").value;
-      confirmationResult.confirm(code).then((result) => {
-        alert("OTP Verified! ✅");
-      }).catch((error) => {
-        alert("Invalid OTP ❌");
-      });
+    setupRecaptcha();
+    const appVerifier = window.recaptchaVerifier;
+
+    try {
+      const result = await signInWithPhoneNumber(auth, "+91" + phone, appVerifier);
+      setConfirmationResult(result);
+      alert("OTP भेज दिया गया है ✅");
+    } catch (error) {
+      console.error("OTP भेजने में त्रुटि:", error);
+      alert("OTP भेजने में त्रुटि ⚠️");
     }
-  </script>
-</body>
-</html>
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      alert("कृपया OTP डालें");
+      return;
+    }
+
+    try {
+      await confirmationResult.confirm(otp);
+      alert("Login सफल हुआ ✅");
+    } catch (error) {
+      alert("गलत OTP ❌");
+    }
+  };
+
+  return (
+    <div style={{ textAlign: "center", marginTop: "50px" }}>
+      <h2>📱 Sirohi Services OTP Login</h2>
+
+      <input
+        type="text"
+        placeholder="मोबाइल नंबर डालें"
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+      />
+      <br /><br />
+
+      <div id="recaptcha-container"></div>
+
+      <button onClick={handleSendOtp}>OTP भेजें</button>
+      <br /><br />
+
+      <input
+        type="text"
+        placeholder="OTP डालें"
+        value={otp}
+        onChange={(e) => setOtp(e.target.value)}
+      />
+      <br /><br />
+      <button onClick={handleVerifyOtp}>OTP Verify करें</button>
+    </div>
+  );
+}
+
+export default CustomerLogin;
